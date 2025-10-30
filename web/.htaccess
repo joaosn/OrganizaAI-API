@@ -1,0 +1,47 @@
+# Habilita o módulo de headers
+<IfModule mod_headers.c>
+    # Permite CORS para todos os domínios (ou especifique apenas streetstyle.com.br)
+    # Permite apenas domínios específicos e suporta credenciais
+    SetEnvIf Origin "^https?://(streetstyle\.com\.br|click-joias\.jztech\.com\.br)$" AccessControlAllowOrigin=$0
+    Header set Access-Control-Allow-Origin %{AccessControlAllowOrigin}e env=AccessControlAllowOrigin
+
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# Força MIME types corretos para arquivos JavaScript e CSS
+<IfModule mod_mime.c>
+    AddType application/javascript .js .mjs
+    AddType text/javascript .js .mjs
+    AddType text/css .css
+    AddType application/json .json
+    AddType image/svg+xml .svg
+</IfModule>
+
+# Configuração para SPA (Single Page Application)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Não redireciona assets (js, css, imagens, etc)
+    RewriteCond %{REQUEST_URI} !\.(js|css|json|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$ [NC]
+    
+    # Se o arquivo ou diretório existe, serve diretamente
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Caso contrário, redireciona para index.html
+    RewriteRule . /index.html [L]
+</IfModule>
+
+# Cache para assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>

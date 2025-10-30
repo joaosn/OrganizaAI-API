@@ -1,0 +1,126 @@
+name: Deploy completo (ORGANIZAAI)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # =======================
+      # FRONT-END (WEB)
+      # =======================
+      - name: Setup Node (com cache npm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ./web/package-lock.json
+
+      # Gera .env.production a partir das Repository Variables (Settings > Variables)
+      - name: Gerar .env.production (Web)
+        working-directory: ./web
+        run: |
+          rm -f .env.production
+          cat > .env.production << 'EOF'
+          VITE_API_URL=${{ vars.VITE_API_URL }}
+          VITE_ENV=production
+          EOF
+
+      # Fixar versão do Rollup antes de instalar (estabiliza o build)
+      - name: Fixar versão do Rollup via overrides
+        working-directory: ./web
+        run: npm pkg set "overrides.rollup=4.18.0"
+
+      - name: Instalar dependências (Web) com --force
+        working-directory: ./web
+        run: npm install --force
+
+      # Workaround do bug de dependência opcional do Rollup no Linux (runner x64)
+      - name: Garantir binário nativo do Rollup (Linux x64)
+        working-directory: ./web
+        run: npm install -D @rollup/rollup-linux-x64-gnu --force
+
+      - name: Build Web (modo production)
+        working-directory: ./web
+        run: npm run build -- --mode production
+
+      # Copia .htaccess para SPA, se existir em public/ (útil p/ BrowserRouter)
+      - name: Copiar .htaccess (se existir)
+        working-directory: ./web
+        run: |
+          if [ -f public/.htaccess ]; then
+            cp public/.htaccess dist/.htaccess
+          fi
+
+      - name: Conferir build do Web
+        working-directory: ./web/dist
+        run: |
+          test -f index.html
+          ls -lah
+
+      # =======================
+      # BACK-END (API PHP)
+      # =======================
+      - name: Setup PHP + Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      # Cria o .env da API a partir de UMA Repository Variable multilinha (visível)
+      # Crie em Settings > Variables:
+      #  - API_ENV_FILE  (conteúdo inteiro do .env da API)
+      - name: Gerar .env da API (via Repository Variable)
+        working-directory: ./api
+        env:
+          API_ENV_FILE: ${{ vars.API_ENV_FILE }}
+        run: |
+          rm -f .env
+          printf '%s' "$API_ENV_FILE" > .env
+          echo "API .env criado."
+
+      - name: Cache da vendor (API)
+        uses: actions/cache@v3
+        with:
+          path: ./api/vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('./api/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Instalar dependências PHP (API)
+        working-directory: ./api
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+
+      # =======================
+      # DEPLOY
+      # =======================
+      - name: Deploy API
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./api/
+          server-dir: /api-clickjoias.jztech.com.br/
+          exclude: |
+            **/.git*
+            **/.github*
+
+      - name: Deploy Web (web/dist)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./web/dist/
+          server-dir: /click-joias.jztech.com.br/
+          exclude: |
+            **/.git*
+            **/.github*
+          dangerous-clean-slate: true
