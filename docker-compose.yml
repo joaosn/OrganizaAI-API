@@ -4,9 +4,9 @@ version: '3.8'
 name: api
 
 services:
-  clickjoias:
+  organizaai:
     image: api_mvc:latest
-    container_name: clickjoias_api  # ✅ Nome diferente!
+    container_name: organizaai  # ✅ Nome diferente!
     volumes:
       - ./api:/var/www/html
     ports:

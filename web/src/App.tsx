@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, useRoutes } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./theme/ThemeProvider";
 import { ToastProvider } from "./components/Toast/ToastProvider";
@@ -9,8 +9,7 @@ import { Toaster } from "sonner";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LabelPrintSettingsProvider } from "./contexts/LabelPrintSettingsContext";
-
-const queryClient = new QueryClient();
+import { queryClient } from "./config/query-client";
 
 function AppRoutes() {
   const element = useRoutes(routes);

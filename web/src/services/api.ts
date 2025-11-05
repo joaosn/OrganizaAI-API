@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 import type { User } from '../models/UserModel';
 
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -124,6 +125,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   response => response,
   async error => {
+    // 401: Token inválido/expirado
     if (error.response?.status === 401) {
       try {
         await validateToken();
@@ -136,9 +138,26 @@ api.interceptors.response.use(
       } catch (_) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
+        toast.error('Sessão expirada. Faça login novamente.');
         window.location.href = '/login';
       }
     }
+
+    // 403: Acesso negado
+    if (error.response?.status === 403) {
+      toast.error('Você não tem permissão para acessar este recurso.');
+    }
+
+    // 404: Não encontrado
+    if (error.response?.status === 404) {
+      toast.error('Recurso não encontrado.');
+    }
+
+    // 500: Erro do servidor
+    if (error.response?.status === 500) {
+      toast.error('Erro no servidor. Tente novamente mais tarde.');
+    }
+
     return Promise.reject(error);
   }
 );
