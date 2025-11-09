@@ -3,4 +3,6 @@ logs
 composer.lock
 .env
 .idea
-public/images/*
+public/images/*Dockerfile
+docker-compose.yml
+.env

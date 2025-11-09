@@ -3,8 +3,7 @@
 namespace src\controllers;
 
 use \core\Controller as ctrl;
-use src\handlers\Emails as EmailsHandler;
-use src\handlers\Logs as LogsHandler;
+use src\handlers\RelatoriosHandler;
 
 /**
  * DashboardController - Responsável por exibir estatísticas
@@ -35,15 +34,13 @@ class DashboardController extends ctrl
             $idsistema = $idsistemaQS ?: null; // null = geral (todos)
             
             // ✅ Controller → Handler → Model
-            $dados = EmailsHandler::obterDadosDashboard($idsistema, 10);
+            $handler = new RelatoriosHandler();
+            $dados = $handler->obterEstatisticasDashboard();
 
             // Retorna os dados
-            return self::response([
-                'estatisticas' => $dados['estatisticas'],
-                'ultimos_emails' => $dados['ultimos_emails']
-            ], 200);
+            return self::response($dados, 200);
         } catch (\Exception $e) {
-            self::log('Erro ao obter estatísticas do dashboard: ' . $e->getMessage());
+            // self::log('Erro ao obter estatísticas do dashboard: ' . $e->getMessage()); // Desativado para evitar erro de método inexistente
             return self::rejectResponse($e);
         }
     }

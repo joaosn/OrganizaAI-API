@@ -206,7 +206,7 @@ class RelatoriosHandler {
     /**
      * Obtém dashboard com todas as estatísticas
      */
-    public function obterDashboard() {
+    public function obterEstatisticasDashboard() {
         try {
             $stats = $this->relatoriosModel->dashboardStats();
 

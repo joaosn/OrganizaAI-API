@@ -4,7 +4,7 @@ namespace src\controllers;
 
 use core\Controller as ctrl;
 use Exception;
-use src\handlers\Sistemas as SistemasHandler;
+use src\handlers\SistemasHandler;
 
 /**
  * SistemasController - Responsável por gerenciar sistemas/clientes da API
@@ -33,8 +33,10 @@ class SistemasController extends ctrl
     public function listar()
     {
         try {
-            $sistemas = SistemasHandler::listarTodos();
-            ctrl::response($sistemas, 200);
+            $handler = new SistemasHandler();
+            $resultado = $handler->listarSistemas();
+            
+            ctrl::response(['result' => $resultado['data']], 200);
         } catch (Exception $e) {
             ctrl::rejectResponse($e);
         }
